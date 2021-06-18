@@ -1,0 +1,52 @@
+{
+	"jobName": "azimuthJob",
+	"jobXmlFile": "azimuth.xml",
+	"jarName": "azimuth-0.0.1.jar",
+	"params": {
+		"dir.input" : {
+			"value": "C:\\Users\\AXC0824\\Desktop\\job\\azimuth\\input\\"
+		},
+		"dir.temp": {
+			"value": "C:\\Users\\AXC0824\\Desktop\\job\\azimuth\\temp\\"
+		},
+		"dir.output": {
+			"value": "C:\\Users\\AXC0824\\Desktop\\job\\azimuth\\output\\"
+		},
+		"dir.salvi": {
+			"value": "C:\\Users\\AXC0824\\Desktop\\job\\azimuth\\salvi\\"
+		},
+		"file.regex": {
+			"value": "(?i).*(.JRN)"
+		},
+		"columns": {
+			"value": "A,B,NOMINATIVO,D,E,F,G,H,NOME_PDF,L,M,N,O,NDG"
+		},
+		"header": {
+			"value": "ISTITUTO;NOME_FILE;NOMINATIVO;NDG;COD_DOCUMENTO;DATA_RIF;ID_LAVORO;PROGRESSIVO;NR_PAGINE"
+		},
+		"algoritmo": {
+			"value": "SHA1"
+		},
+		"istituto": {
+			"value": "766"
+		},
+		"codDocumento": {
+			"value": "IC00P001"
+		},
+		"zipPrefix": {
+			"value": "766_CGL"
+		},
+		"conn.driver": {
+			"value": "oracle.jdbc.driver.OracleDriver"
+		},
+		"conn.url": {
+			"value": "jdbc:oracle:thin:@gpocbs1o.ced.it:1527:GPOCBS1O"
+		},
+		"conn.username": {
+			"value": "PROC_CFLOW"
+		},
+		"conn.password": {
+			"value": "PROC_CFLOW"
+		}
+	}
+}
