@@ -1,0 +1,152 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:batch="http://www.springframework.org/schema/batch"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/batch
+http://www.springframework.org/schema/batch/spring-batch.xsd 
+http://www.springframework.org/schema/beans 
+http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<description>
+		Job che riceve in input un flusso zip contenente un file
+		guida (.JRN) e N
+		pdf.
+		Unzippa legge il file indice e genera un flusso
+		zip di output contenente un
+		file .csv ed i relativi pdf
+		rinominati con
+		il proprio hash.
+		Successivamente invia a Filenet il flusso.
+	</description>
+
+	<job id="azimuthJob"
+		xmlns="http://www.springframework.org/schema/batch">
+
+		<step id="deleteDirTempStep" next="unzipByPatternTaskletStep">
+			<tasklet ref="deleteDirTempTasklet" />
+		</step>
+
+
+		<step id="unzipByPatternTaskletStep" next="readProcessFileStep">
+			<tasklet ref="unzipByPatternTasklet" />
+		</step>
+
+		<step id="readProcessFileStep" next="zipStepForOut">
+			<tasklet>
+				<chunk reader="fileReader" processor="processor"
+					writer="csvFileWriter" commit-interval="9999999">
+
+				</chunk>
+			</tasklet>
+		</step>
+		<step id="zipStepForOut" next="zipStepForSalvi">
+			<tasklet ref="zipDirectoryTaskletOut" />
+		</step>
+		<step id="zipStepForSalvi">
+			<tasklet ref="zipDirectoryTaskletSalvi" />
+		</step>
+
+
+	</job>
+
+	<!-- === TASKLET === -->
+
+
+	<bean id="deleteDirTempTasklet"
+		class="it.gepo.engine.local.tasklet.DeleteDirTasklet" scope="job">
+
+		<property name="dirTemp" value="#{jobParameters['dir.temp']}"></property>
+	</bean>
+	<bean id="unzipByPatternTasklet"
+		class="it.gepo.engine.support.tasklet.UnzipByPatternTasklet"
+		scope="job">
+		<property name="sourceDirPath"
+			value="#{jobParameters['dir.input']}"></property>
+		<property name="filenamePattern" value="(?i).*(.zip)"></property>
+		<property name="destinationDirPath"
+			value="#{jobParameters['dir.temp']}"></property>
+	</bean>
+
+	<bean id="zipDirectoryTaskletOut"
+		class="it.gepo.engine.support.tasklet.ZipDirectoryTasklet"
+		scope="step">
+		<property name="inputDirectoryPath"
+			value="#{jobParameters['dir.temp']}"></property>
+		<property name="outputDirectoryPath"
+			value="#{jobParameters['dir.output']}"></property>
+		<property name="zipName"
+			value="#{jobParameters['zipPrefix']}#{jobExecutionContext['idLavoro']}"></property>
+	</bean>
+
+	<bean id="zipDirectoryTaskletSalvi"
+		class="it.gepo.engine.support.tasklet.ZipDirectoryTasklet"
+		scope="step">
+		<property name="inputDirectoryPath"
+			value="#{jobParameters['dir.temp']}"></property>
+		<property name="outputDirectoryPath"
+			value="#{jobParameters['dir.salvi']}"></property>
+		<property name="zipName"
+			value="#{jobParameters['zipPrefix']}#{jobExecutionContext['idLavoro']}"></property>
+	</bean>
+
+
+	<!-- === READER === -->
+	<bean id="fileReader" class="it.gepo.engine.local.reader.CustomItemReader"
+		scope="step">
+		<property name="filePath"
+			value="#{jobParameters['dir.temp']}" />
+		<property name="fileNameRegex"
+			value="#{jobParameters['file.regex']}" />
+		<property name="delimiter" value=";" />
+		<property name="columns" value="#{jobParameters['columns']}" />
+	</bean>
+
+	<!-- === PROCESSOR === -->
+	<bean id="processor"
+		class="it.gepo.engine.local.processor.CustomItemProcessor" scope="step">
+		<property name="dirTemp" value="#{jobParameters['dir.temp']}" />
+		<property name="istituto"
+			value="#{jobParameters['istituto']}" />
+		<property name="algoritmo"
+			value="#{jobParameters['algoritmo']}" />
+		<property name="codDocumento"
+			value="#{jobParameters['codDocumento']}" />
+		<property name="zipPrefix"
+			value="#{jobParameters['zipPrefix']}" />
+		<property name="dataSource" ref="jobDataSourceCflow" />
+
+	</bean>
+
+	<!-- === WRITER === -->
+
+	<bean id="csvFileWriter"
+		class="it.gepo.engine.local.writer.CustomItemWriter" scope="step">
+		<property name="resource"
+			value="file:#{jobParameters['dir.temp']}/INDICE.csv" />
+		<property name="lineAggregator">
+			<bean
+				class="org.springframework.batch.item.file.transform.DelimitedLineAggregator">
+				<property name="delimiter" value=";" />
+				<property name="fieldExtractor">
+					<bean
+						class="org.springframework.batch.item.file.transform.PassThroughFieldExtractor" />
+				</property>
+			</bean>
+		</property>
+	</bean>
+
+
+
+	<!-- === DATASOURCE === -->
+
+	<bean id="jobDataSourceCflow"
+		class="org.apache.commons.dbcp.BasicDataSource" scope="job">
+		<property name="driverClassName"
+			value="#{jobParameters['conn.driver']}" />
+		<property name="url" value="#{jobParameters['conn.url']}" />
+		<property name="username"
+			value="#{jobParameters['conn.username']}" />
+		<property name="password"
+			value="#{jobParameters['conn.password']}" />
+	</bean>
+
+</beans>
